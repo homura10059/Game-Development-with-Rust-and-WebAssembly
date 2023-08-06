@@ -1,3 +1,7 @@
+#[macro_use]
+mod browser;
+mod engine;
+
 use rand::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -27,47 +31,18 @@ struct Cell {
 #[wasm_bindgen(start)]
 pub fn main_js() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
-
-    let window = web_sys::window().unwrap();
-    let document = window.document().unwrap();
-    let canvas = document
-        .get_element_by_id("canvas")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlCanvasElement>()
-        .unwrap();
-    let context = canvas
-        .get_context("2d")
-        .unwrap()
-        .unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()
-        .unwrap();
+    let context = browser::context().expect("Could not get browser context");
 
     wasm_bindgen_futures::spawn_local(async move {
-        let json = fetch_json("rhb.json")
+        let sheet: Sheet = browser::fetch_json("rhb.json")
             .await
-            .expect("Could not fetch rhb.json");
-        let sheet: Sheet = json
+            .expect("Could not fetch rhb.json")
             .into_serde()
             .expect("Could not convert rhb.json into a Sheet structure");
-        let (success_tx, success_rx) = futures::channel::oneshot::channel::<Result<(), JsValue>>();
-        let image = web_sys::HtmlImageElement::new().unwrap();
-        let success_tx = Rc::new(Mutex::new(Some(success_tx)));
-        let error_tx = Rc::clone(&success_tx);
-        let callback = Closure::once(move || {
-            if let Some(success_tx) = success_tx.lock().ok().and_then(|mut opt| opt.take()) {
-                success_tx.send(Ok(()));
-            }
-        });
-        let error_callback = Closure::once(move |err| {
-            if let Some(error_tx) = error_tx.lock().ok().and_then(|mut opt| opt.take()) {
-                error_tx.send(Err(err));
-            }
-        });
-        image.set_onload(Some(callback.as_ref().unchecked_ref()));
-        image.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
 
-        image.set_src("rhb.png");
-        success_rx.await;
+        let image = engine::load_image("rhb.png")
+            .await
+            .expect("Could not load rhb.png");
 
         let mut frame = -1;
         let interval_callback = Closure::wrap(Box::new(move || {
@@ -88,10 +63,13 @@ pub fn main_js() -> Result<(), JsValue> {
                 sprite.frame.h.into(),
             );
         }) as Box<dyn FnMut()>);
-        window.set_interval_with_callback_and_timeout_and_arguments_0(
-            interval_callback.as_ref().unchecked_ref(),
-            50,
-        );
+
+        browser::window()
+            .unwrap()
+            .set_interval_with_callback_and_timeout_and_arguments_0(
+                interval_callback.as_ref().unchecked_ref(),
+                50,
+            );
 
         interval_callback.forget();
     });
