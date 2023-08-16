@@ -5,11 +5,9 @@ mod game;
 
 use crate::engine::GameLoop;
 use crate::game::WalkTheDog;
-use rand::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
 
 #[derive(Deserialize)]
 struct Sheet {
