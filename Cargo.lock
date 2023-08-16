@@ -77,7 +77,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "chapter_3"
+name = "chapter_4"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "console_error_panic_hook",
+ "futures",
+ "getrandom",
+ "js-sys",
+ "rand",
+ "serde",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-bindgen-test",
+ "web-sys",
+ "wee_alloc",
+]
+
+[[package]]
+name = "chapter_5"
 version = "0.1.0"
 dependencies = [
  "anyhow",
