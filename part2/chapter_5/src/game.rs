@@ -1,4 +1,4 @@
-use crate::engine::{Game, KeyState, Rect, Renderer};
+use crate::engine::{Game, Image, KeyState, Point, Rect, Renderer};
 use crate::game::red_hat_boy_states::{
     Idle, Jumping, JumpingEndState, RedHatBoyContext, RedHatBoyState, Running, Sliding,
     SlidingEndState,
@@ -28,9 +28,15 @@ pub struct Sheet {
     frames: HashMap<String, Cell>,
 }
 
+pub struct Walk {
+    boy: RedHatBoy,
+    background: Image,
+    stone: Image,
+}
+
 pub enum WalkTheDog {
     Loading,
-    Loaded(RedHatBoy),
+    Loaded(Walk),
 }
 
 #[async_trait(?Send)]
@@ -43,23 +49,29 @@ impl Game for WalkTheDog {
                     json.into_serde::<Sheet>()?,
                     engine::load_image("rhb.png").await?,
                 );
-                Ok(Box::new(WalkTheDog::Loaded(rhb)))
+                let background = engine::load_image("BG.png").await?;
+                let stone = engine::load_image("Stone.png").await?;
+                Ok(Box::new(WalkTheDog::Loaded(Walk {
+                    boy: rhb,
+                    background: Image::new(background, Point { x: 0, y: 0 }),
+                    stone: Image::new(stone, Point { x: 150, y: 546 }),
+                })))
             }
             WalkTheDog::Loaded(_) => Err(anyhow!("Error: Game is already initialized!")),
         }
     }
     fn update(&mut self, keystate: &KeyState) {
-        if let WalkTheDog::Loaded(rhb) = self {
+        if let WalkTheDog::Loaded(walk) = self {
             if keystate.is_pressed("ArrowRight") {
-                rhb.run_right();
+                walk.boy.run_right();
             }
             if keystate.is_pressed("ArrowDown") {
-                rhb.slide();
+                walk.boy.slide();
             }
             if keystate.is_pressed("Space") {
-                rhb.jump();
+                walk.boy.jump();
             }
-            rhb.update();
+            walk.boy.update();
         }
     }
     fn draw(&self, renderer: &Renderer) {
@@ -69,8 +81,10 @@ impl Game for WalkTheDog {
             width: 600.0,
             height: 600.0,
         });
-        if let WalkTheDog::Loaded(rhb) = self {
-            rhb.draw(renderer);
+        if let WalkTheDog::Loaded(walk) = self {
+            walk.background.draw(renderer);
+            walk.boy.draw(renderer);
+            walk.stone.draw(renderer);
         }
     }
 }
