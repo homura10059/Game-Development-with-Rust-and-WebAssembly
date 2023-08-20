@@ -47,6 +47,15 @@ pub struct Rect {
     pub height: f32,
 }
 
+impl Rect {
+    pub fn intersects(&self, rect: &Rect) -> bool {
+        self.x < (rect.x + rect.width)
+            && self.x + self.width > rect.x
+            && self.y < (rect.y + rect.height)
+            && self.y + self.height > rect.y
+    }
+}
+
 pub async fn load_image(source: &str) -> Result<HtmlImageElement> {
     let image = browser::new_image()?;
     let (complete_tx, complete_rx) = channel::<Result<()>>();
@@ -232,14 +241,31 @@ fn process_input(state: &mut KeyState, keyevent_receiver: &mut UnboundedReceiver
 pub struct Image {
     element: HtmlImageElement,
     position: Point,
+    bounding_box: Rect,
 }
 
 impl Image {
     pub fn new(element: HtmlImageElement, position: Point) -> Self {
-        Self { element, position }
+        let bounding_box = Rect {
+            x: position.x.into(),
+            y: position.y.into(),
+            width: element.width() as f32,
+            height: element.height() as f32,
+        };
+        Self {
+            element,
+            position,
+            bounding_box,
+        }
     }
 
     pub fn draw(&self, renderer: &Renderer) {
-        renderer.draw_entire_image(&self.element, &self.position)
+        renderer.draw_entire_image(&self.element, &self.position);
+
+        renderer.draw_rect(&self.bounding_box);
+    }
+
+    pub fn bounding_box(&self) -> &Rect {
+        &self.bounding_box
     }
 }
