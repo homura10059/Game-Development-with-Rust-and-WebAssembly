@@ -42,6 +42,10 @@ impl Platform {
             },
             &self.destination_box(),
         );
+
+        self.bounding_boxes().iter().for_each(|bounding_box| {
+            renderer.draw_rect(bounding_box);
+        });
     }
 
     fn destination_box(&self) -> Rect {
@@ -185,6 +189,8 @@ impl RedHatBoy {
             },
             &self.destination_box(),
         );
+
+        renderer.draw_rect(&self.bounding_box());
     }
 }
 

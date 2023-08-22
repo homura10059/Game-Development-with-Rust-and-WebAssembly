@@ -272,7 +272,8 @@ impl Image {
     }
 
     pub fn draw(&self, renderer: &Renderer) {
-        renderer.draw_entire_image(&self.element, &self.position)
+        renderer.draw_entire_image(&self.element, &self.position);
+        renderer.draw_rect(&self.bounding_box);
     }
 
     pub fn bounding_box(&self) -> &Rect {
